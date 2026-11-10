@@ -1,9 +1,12 @@
+import CustomerDashboard from "@/components/dashboard/customer/customer-dashboard-defual"
 
 
 
 const DashboardHome = () => {
   return (
-    <div>DasgoardHome</div>
+    <div>
+<CustomerDashboard></CustomerDashboard>
+    </div>
   )
 }
 

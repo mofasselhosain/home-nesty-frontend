@@ -26,6 +26,7 @@ import { toast } from "@/components/ui/toast";
 import { useBookingCreate } from "@/hooks";
 import type { ICreateBookingPayload } from "@/types/booking.type";
 import type { IProperty } from "@/types";
+import AuthGuard from "@/components/auth/auth-guard";
 
 interface CreateBookingDialogProps {
   property: IProperty;
@@ -151,7 +152,7 @@ export function CreateBookingDialog({
     >
       <DialogTrigger
         render={
-          <Button type="button">
+         <Button type="button">
             Book Now
           </Button>
         }
@@ -259,7 +260,8 @@ export function CreateBookingDialog({
               }
             />
 
-            <Button
+         <AuthGuard>
+             <Button
               type="submit"
               disabled={isPending}
             >
@@ -272,6 +274,7 @@ export function CreateBookingDialog({
                 "Confirm Booking"
               )}
             </Button>
+         </AuthGuard>
           </DialogFooter>
         </form>
       </DialogContent>

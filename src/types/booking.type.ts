@@ -4,3 +4,7 @@ export interface ICreateBookingPayload {
   endDate?: string;
   guests: number;
 }
+export interface IPayBookingPayload {
+  bookingId: string;
+
+}

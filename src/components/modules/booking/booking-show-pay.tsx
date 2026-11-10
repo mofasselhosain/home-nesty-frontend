@@ -2,7 +2,6 @@
 
 import {
   CalendarDays,
-  CreditCard,
   House,
   Users,
   Clock,
@@ -19,9 +18,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useGetBooking } from "@/hooks";
 
-
+import { useGetBooking, usePayBooking } from "@/hooks";
+import { toast } from "@/components/ui/toast";
 
 export interface IBooking {
   id: string;
@@ -42,51 +41,71 @@ export interface IBooking {
   updatedAt: string;
 }
 
-interface BookingListProps {
-  bookingData: IBooking[];
- 
+interface BookingListResponse {
+  data: IBooking[];
 }
 
-const statusStyles: Record<string, string> = {
-  PENDING:
-    "bg-amber-100 text-amber-800 border-amber-200",
-  CONFIRMED:
-    "bg-emerald-100 text-emerald-800 border-emerald-200",
-  CANCELLED:
-    "bg-red-100 text-red-800 border-red-200",
-  ONGOING:
-    "bg-blue-100 text-blue-800 border-blue-200",
-  COMPLETED:
-    "bg-gray-100 text-gray-700 border-gray-200",
+const statusStyles: Record<IBooking["status"], string> = {
+  PENDING: "bg-amber-100 text-amber-800 border-amber-200",
+  CONFIRMED: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  CANCELLED: "bg-red-100 text-red-800 border-red-200",
+  ONGOING: "bg-blue-100 text-blue-800 border-blue-200",
+  COMPLETED: "bg-gray-100 text-gray-700 border-gray-200",
 };
 
-function formatDate(date: string | null) {
+/**
+ * Format dates consistently between the server and browser.
+ * UTC avoids differences caused by local time zones.
+ */
+function formatDate(date: string | null | undefined): string {
   if (!date) return "Not specified";
+
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "Invalid date";
+  }
 
   return new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
     timeZone: "UTC",
-  }).format(new Date(date));
+  }).format(parsedDate);
 }
 
-function formatMoney(amount: string | number) {
-  return new Intl.NumberFormat("en-BD", {
-    style: "currency",
-    currency: "BDT",
-    maximumFractionDigits: 0,
-  }).format(Number(amount));
+/**
+ * Use a fixed locale and an explicit currency symbol
+ * to reduce server/client formatting differences.
+ */
+function formatMoney(amount: string | number): string {
+  const numericAmount = Number(amount);
+
+  if (!Number.isFinite(numericAmount)) {
+    return "৳0";
+  }
+
+  const formattedAmount = new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+    useGrouping: true,
+  }).format(numericAmount);
+
+  return `৳${formattedAmount}`;
 }
 
 function getNights(
   startDate: string,
   endDate: string | null,
-) {
+): number | null {
   if (!endDate) return null;
 
   const start = new Date(startDate).getTime();
   const end = new Date(endDate).getTime();
+
+  if (!Number.isFinite(start) || !Number.isFinite(end)) {
+    return null;
+  }
 
   return Math.max(
     0,
@@ -94,37 +113,150 @@ function getNights(
   );
 }
 
+function getBookings(
+  response: unknown,
+): IBooking[] {
+  if (!response || typeof response !== "object") {
+    return [];
+  }
+
+  const result = response as {
+    data?: unknown;
+  };
+
+  // Supports: { data: [...] }
+  if (Array.isArray(result.data)) {
+    return result.data as IBooking[];
+  }
+
+  // Supports: { data: { data: [...] } }
+  if (result.data && typeof result.data === "object") {
+    const nested = result.data as {
+      data?: unknown;
+    };
+
+    if (Array.isArray(nested.data)) {
+      return nested.data as IBooking[];
+    }
+  }
+
+  return [];
+}
+
 export default function BookingList() {
-    const {data:bookings,isLoading} = useGetBooking()
+  const {
+    data: bookings,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetBooking();
 
-      if (isLoading) {
+  const {
+    mutate: payBooking,
+    isPending,
+  } = usePayBooking();
+
+  const handlePay = (bookingId: string) => {
+    payBooking(
+      { bookingId },
+      {
+        onSuccess: (response: unknown) => {
+          console.log(response)
+          const res = response as {
+            data?: {
+              paymentUrl?: string;
+              data?: {
+                paymentUrl?: string;
+              };
+            };
+            paymentUrl?: string;
+          };
+
+          const paymentUrl =
+            res?.data?.paymentUrl ??
+            res?.paymentUrl ??
+            res?.data?.data?.paymentUrl;
+
+          // Validate the URL before redirecting to an external gateway.
+          if (
+            typeof paymentUrl !== "string" ||
+            !/^https?:\/\//i.test(paymentUrl)
+          ) {
+            toast.add({
+              title: "Payment Failed",
+              description:
+                "Unable to get a valid payment URL from the server.",
+              type: "error",
+            });
+
+            return;
+          }
+
+          toast.add({
+            title: "Payment Initialized",
+            description:
+              "Redirecting you to the payment gateway...",
+            type: "success",
+          });
+console.log(paymentUrl,)
+          // Correct for an external payment gateway such as bKash.
+          window.location.assign(paymentUrl);
+        },
+
+        onError: (error: Error) => {
+          toast.add({
+            title: "Payment Failed",
+            description:
+              error.message || "Please try again.",
+            type: "error",
+          });
+        },
+      },
+    );
+  };
+
+  if (isLoading) {
     return (
       <div className="rounded-lg border p-8 text-center text-muted-foreground">
-        Loading properties...
+        Loading bookings...
       </div>
     );
   }
 
-  if (!bookings?.data.length) {
+  if (isError) {
     return (
-      <div className="rounded-lg border p-8 text-center text-muted-foreground">
-        No properties found. Create your first property.
+      <div className="rounded-lg border p-8 text-center">
+        <p className="text-red-600">
+          Failed to load bookings.
+        </p>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="mt-4"
+          onClick={() => refetch()}
+        >
+          Try Again
+        </Button>
       </div>
     );
   }
-    console.log(bookings)
 
+  const bookingData: IBooking[] = getBookings(
+    bookings as BookingListResponse | undefined,
+  );
 
-
-
-
-
-
-
+  if (bookingData.length === 0) {
+    return (
+      <div className="rounded-lg border p-8 text-center text-muted-foreground">
+        No bookings found.
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-      {bookings?.data.map((booking:any) => {
+      {bookingData.map((booking) => {
         const nights = getNights(
           booking.startDate,
           booking.endDate,
@@ -139,8 +271,8 @@ export default function BookingList() {
           >
             <CardHeader className="space-y-4">
               <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-xl bg-primary/10 p-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="shrink-0 rounded-xl bg-primary/10 p-3">
                     <House className="size-5 text-primary" />
                   </div>
 
@@ -224,7 +356,8 @@ export default function BookingList() {
                   </div>
 
                   <span className="text-sm font-medium">
-                    {nights} {nights === 1 ? "night" : "nights"}
+                    {nights}{" "}
+                    {nights === 1 ? "night" : "nights"}
                   </span>
                 </div>
               )}
@@ -242,29 +375,22 @@ export default function BookingList() {
             </CardContent>
 
             <CardFooter className="flex-col gap-3">
-              {canPay ? (
-                <Button
-                  className="w-full"
-                  onClick={() => ""}
-                >
-                  <CreditCard className="mr-2 size-4" />
-                  Pay Now
-                </Button>
-              ) : (
-                <Button
-                  className="w-full"
-                  variant="outline"
-                  disabled
-                >
-                  {booking.status === "CONFIRMED"
-                    ? "Booking Confirmed"
-                    : booking.status === "CANCELLED"
-                      ? "Booking Cancelled"
-                      : booking.status === "COMPLETED"
-                        ? "Booking Completed"
-                        : "Booking In Progress"}
-                </Button>
-              )}
+              <Button
+                type="button"
+                className="w-full"
+                disabled={!canPay || isPending}
+                onClick={() => handlePay(booking.id)}
+              >
+                {!canPay
+                  ? booking.status === "CANCELLED"
+                    ? "Booking Cancelled"
+                    : booking.status === "COMPLETED"
+                      ? "Booking Completed"
+                      : "Payment Unavailable"
+                  : isPending
+                    ? "Processing..."
+                    : "Pay Now"}
+              </Button>
             </CardFooter>
           </Card>
         );

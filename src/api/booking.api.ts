@@ -1,6 +1,6 @@
 import apiClient from "@/lib/apiClient";
 
-import { ICreateBookingPayload } from "@/types/booking.type";
+import { ICreateBookingPayload, IPayBookingPayload } from "@/types/booking.type";
 import { HomeTopeEditPayload, HomeTopePayload, HomeTopeUpdatedData } from "@/types/homeTope";
 
 // export function userLogin(payload: LoginPayload) {
@@ -15,6 +15,12 @@ export function BookingCreate(payload: ICreateBookingPayload) {
   return apiClient("/booking/create", { method: "POST", body:payload });
 
 }
+export function PayBooking(payload: IPayBookingPayload) {
+  return apiClient("/booking/pay-booking", { method: "POST", body:payload });
+
+}
+
+
 
 
 

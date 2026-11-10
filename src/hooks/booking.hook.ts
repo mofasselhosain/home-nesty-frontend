@@ -2,6 +2,8 @@ import {
     BookingCreate,
   getBookingDB,
   
+  PayBooking,
+  
   userHomeTopeUpdated,
   userLogin,
   userLogout,
@@ -17,11 +19,12 @@ export function useBookingCreate() {
     mutationFn: BookingCreate,
   });
 }
-
-
-
-
-
+export function usePayBooking() {
+   
+  return useMutation({
+    mutationFn: PayBooking,
+  });
+}
 
 export function useGetBooking() {
   return useQuery({

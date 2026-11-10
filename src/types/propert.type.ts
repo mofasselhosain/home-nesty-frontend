@@ -172,7 +172,7 @@ export interface IProperty {
   title: string;
   description: string;
   propertyType: PropertyType;
-  category: PropertyCategory;
+  category?: PropertyCategory;
 
   address: string;
   city: string;
@@ -183,9 +183,9 @@ export interface IProperty {
 
   bedrooms: number;
   bathrooms: number;
-  availableRooms: number;
+  availableRooms?: number;
 
-  furnished: FurnishedStatus;
+  furnished?: FurnishedStatus;
 
   imageUrl?: string;
   imagePublicId?: string;
@@ -194,7 +194,7 @@ export interface IProperty {
   contactPhone?: string | null;
   contactEmail?: string | null;
 
-  status: PropertyStatus;
+  status?: PropertyStatus;
   createdAt?:Date
 }
 export interface IPropertyUpdated {
@@ -231,4 +231,45 @@ export interface IpropertyUpdatedPayload {
 export interface PropertyEditPayload {
   id: string;
   payload: IPropertyPayload
+}
+export type PropertyTypeDemo =
+  | "APARTMENT"
+  | "HOUSE"
+  | "DUPLEX"
+  | "VILLA"
+  | "ROOM";
+
+export type PropertyCategoryDemo = "RENT" | "SALE";
+
+export type FurnishedStatusDemo =
+  | "FURNISHED"
+  | "SEMI_FURNISHED"
+  | "UNFURNISHED";
+
+export type PropertyStatusDemo =
+  | "AVAILABLE"
+  | "RENTED"
+  | "PENDING"
+  | "INACTIVE";
+export interface IPropertyDemo {
+  id: string;
+  title: string;
+  description: string;
+  propertyType: PropertyTypeDemo;
+  category: PropertyCategoryDemo;
+
+  address: string;
+  city: string;
+  area: string;
+
+  rent: number;
+  bedrooms: number;
+  bathrooms: number;
+  availableRooms?: number;
+
+  furnished: FurnishedStatusDemo;
+
+  imageUrl: string;
+  status: PropertyStatusDemo;
+  createdA?:Date
 }
