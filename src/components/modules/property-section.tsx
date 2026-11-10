@@ -37,6 +37,8 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { IPropertyDemo } from "@/types";
 import { number } from "zod";
 import { useGetProperty } from "@/hooks";
+import PropertyDetailsTable from "./property/property-show-home";
+
 
 
 
@@ -526,12 +528,13 @@ export default function PropertiesPage() {
                         </span>
                       </div>
 
-                      <Button variant="outline" className="w-full" >
+                      {/* <Button variant="outline" className="w-full" >
                         <a href={`/properties/${property.id}`}>
                           View Details
                           <ChevronRight className="ml-2 h-4 w-4" />
                         </a>
-                      </Button>
+                      </Button> */}
+                      <div> <PropertyDetailsTable key={property.id} property={property} /></div>
                     </CardContent>
                   </Card>
                 ))}

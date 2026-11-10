@@ -14,7 +14,7 @@ export default function HomePage() {
       <CustomerInterestSection/>
     
       < QuestiontAccordionDemo></QuestiontAccordionDemo>
-        <DreamHomeSection/>
+        {/* <DreamHomeSection/> */}
     </div>
   );
 }
