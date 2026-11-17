@@ -1,3 +1,4 @@
+import AgentSection from "@/components/modules/agent-serction/agent-section";
 import { PropertyCarousel } from "@/components/modules/home-scrooler-card";
 import HomeHero from "@/components/modules/home-top";
 import CustomerInterestSection from "@/components/modules/property/customer-interested-section";
@@ -15,6 +16,7 @@ export default function HomePage() {
     
       < QuestiontAccordionDemo></QuestiontAccordionDemo>
         {/* <DreamHomeSection/> */}
+        <AgentSection></AgentSection>
     </div>
   );
 }
